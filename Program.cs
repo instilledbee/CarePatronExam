@@ -1,5 +1,9 @@
-﻿using api.Data;
+﻿using System.Reflection;
+using api.Data;
+using api.Models;
 using api.Repositories;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +33,8 @@ services.AddDbContext<DataContext>(options => options.UseInMemoryDatabase(databa
 services.AddScoped<DataSeeder>();
 services.AddScoped<IClientRepository, ClientRepository>();
 
+services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,7 +49,38 @@ app.MapGet("/clients", async (IClientRepository clientRepository) =>
 {
     return await clientRepository.Get();
 })
-.WithName("get clients");
+.WithName("get clients")
+.Produces<Client[]>();
+
+app.MapPost("/clients", async (IClientRepository clientRepository, 
+        IValidator<Client> validator, Client client) =>
+{
+    var validationResult = validator.Validate(client);
+
+    if (!validationResult.IsValid)
+        return Results.ValidationProblem(validationResult.ToDictionary());
+
+    await clientRepository.Create(client);
+    return Results.Created("", client);
+})
+.WithName("create client")
+.ProducesValidationProblem()
+.Produces<Client>(201);
+
+app.MapPut("/clients", async (IClientRepository clientRepository, 
+        IValidator<Client> validator, [FromBody] Client client) =>
+{
+    var validationResult = validator.Validate(client);
+
+    if (!validationResult.IsValid)
+        return Results.ValidationProblem(validationResult.ToDictionary());
+
+    await clientRepository.Update(client);
+    return Results.Ok(client);
+})
+.WithName("edit client")
+.ProducesValidationProblem()
+.Produces<Client>(200);
 
 app.UseCors();
 
