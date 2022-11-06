@@ -116,9 +116,9 @@ app.UseCors();
 // seed data
 using (var scope = app.Services.CreateScope())
 {
-    var dataSeeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
-
-    dataSeeder.Seed();
+    var dataSeeder = scope.ServiceProvider.GetService<DataSeeder>();
+    // note that the integration tests remove the data seeder from the DI container
+    dataSeeder?.Seed();
 }
 
 // run app
