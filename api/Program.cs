@@ -97,6 +97,20 @@ app.MapGet("/clients/search/{searchQuery}",
 .WithName("search clients")
 .Produces<Client[]>();
 
+app.MapGet("/clients/{id}", async (IClientRepository clientRepository, string id) =>
+{
+    if (string.IsNullOrWhiteSpace(id))
+        return Results.BadRequest("Provide a valid id.");
+
+    var client = await clientRepository.Find(id);
+
+    return client == null ? Results.NotFound() : Results.Ok(client);
+})
+.WithName("find client by id")
+.Produces<Client>()
+.ProducesProblem(400)
+.ProducesProblem(404);
+
 app.UseCors();
 
 // seed data

@@ -10,6 +10,7 @@ namespace api.Repositories
         Task Create(Client client);
         Task Update(Client client);
         Task<Client[]> Search(string searchQuery);
+        Task<Client?> Find(string id);
     }
 
     public class ClientRepository : IClientRepository
@@ -54,6 +55,11 @@ namespace api.Repositories
                 x.LastName.Contains(searchQuery, StringComparison.InvariantCultureIgnoreCase));
 
             return await matchingClients.ToArrayAsync();
+        }
+
+        public async Task<Client?> Find(string id)
+        {
+            return await dataContext.Clients.FirstOrDefaultAsync(x => x.Id.Equals(id));
         }
     }
 }
