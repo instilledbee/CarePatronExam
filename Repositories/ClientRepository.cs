@@ -9,6 +9,7 @@ namespace api.Repositories
         Task<Client[]> Get();
         Task Create(Client client);
         Task Update(Client client);
+        Task<Client[]> Search(string searchQuery);
     }
 
     public class ClientRepository : IClientRepository
@@ -44,6 +45,15 @@ namespace api.Repositories
             existingClient.PhoneNumber = client.PhoneNumber;
 
             await dataContext.SaveChangesAsync();
+        }
+
+        public async Task<Client[]> Search(string searchQuery)
+        {
+            var matchingClients = dataContext.Clients.Where(x =>
+                x.FirstName.Contains(searchQuery, StringComparison.InvariantCultureIgnoreCase) ||
+                x.LastName.Contains(searchQuery, StringComparison.InvariantCultureIgnoreCase));
+
+            return await matchingClients.ToArrayAsync();
         }
     }
 }

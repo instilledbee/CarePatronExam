@@ -82,6 +82,17 @@ app.MapPut("/clients", async (IClientRepository clientRepository,
 .ProducesValidationProblem()
 .Produces<Client>(200);
 
+app.MapGet("/clients/search/{searchQuery}", 
+        async (IClientRepository clientRepository, string searchQuery) =>
+{
+    if (string.IsNullOrWhiteSpace(searchQuery))
+        return Array.Empty<Client>();
+
+    return await clientRepository.Search(searchQuery);
+})
+.WithName("search clients")
+.Produces<Client[]>();
+
 app.UseCors();
 
 // seed data
