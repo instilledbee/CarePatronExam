@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using api.Data;
 using api.Models;
+using api.Publishers;
 using api.Repositories;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -32,6 +33,7 @@ services.AddDbContext<DataContext>(options => options.UseInMemoryDatabase(databa
 
 services.AddScoped<DataSeeder>();
 services.AddScoped<IClientRepository, ClientRepository>();
+services.AddScoped<IClientEventPublisher, ClientEventPublisher>();
 
 services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
@@ -52,7 +54,7 @@ app.MapGet("/clients", async (IClientRepository clientRepository) =>
 .WithName("get clients")
 .Produces<Client[]>();
 
-app.MapPost("/clients", async (IClientRepository clientRepository, 
+app.MapPost("/clients", async (IClientRepository clientRepository, IClientEventPublisher clientEventPublisher, 
         IValidator<Client> validator, Client client) =>
 {
     var validationResult = validator.Validate(client);
@@ -61,7 +63,9 @@ app.MapPost("/clients", async (IClientRepository clientRepository,
         return Results.ValidationProblem(validationResult.ToDictionary());
 
     await clientRepository.Create(client);
-    return Results.Created("", client);
+    await clientEventPublisher.OnCreate(client);
+    
+    return Results.Created($"/clients/{client.Id}", client);
 })
 .WithName("create client")
 .ProducesValidationProblem()
